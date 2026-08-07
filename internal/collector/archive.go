@@ -1,8 +1,7 @@
 package collector
 
 import (
-	"archive/tar"
-	"compress/gzip"
+	"archive/zip"
 	"fmt"
 	"io"
 	"os"
@@ -15,8 +14,7 @@ func createArchive(sourceDir string, archivePath string) error {
 		return err
 	}
 
-	gzipWriter := gzip.NewWriter(archiveFile)
-	tarWriter := tar.NewWriter(gzipWriter)
+	zipWriter := zip.NewWriter(archiveFile)
 	parent := filepath.Dir(sourceDir)
 
 	walkErr := filepath.Walk(sourceDir, func(path string, info os.FileInfo, walkErr error) error {
@@ -29,15 +27,7 @@ func createArchive(sourceDir string, archivePath string) error {
 			return err
 		}
 
-		linkTarget := ""
-		if info.Mode()&os.ModeSymlink != 0 {
-			linkTarget, err = os.Readlink(path)
-			if err != nil {
-				return err
-			}
-		}
-
-		header, err := tar.FileInfoHeader(info, linkTarget)
+		header, err := zip.FileInfoHeader(info)
 		if err != nil {
 			return err
 		}
@@ -45,7 +35,19 @@ func createArchive(sourceDir string, archivePath string) error {
 		if info.IsDir() {
 			header.Name += "/"
 		}
-		if err := tarWriter.WriteHeader(header); err != nil {
+		header.Method = zip.Deflate
+
+		writer, err := zipWriter.CreateHeader(header)
+		if err != nil {
+			return err
+		}
+
+		if info.Mode()&os.ModeSymlink != 0 {
+			linkTarget, err := os.Readlink(path)
+			if err != nil {
+				return err
+			}
+			_, err = writer.Write([]byte(linkTarget))
 			return err
 		}
 
@@ -57,7 +59,7 @@ func createArchive(sourceDir string, archivePath string) error {
 		if err != nil {
 			return err
 		}
-		_, copyErr := io.Copy(tarWriter, file)
+		_, copyErr := io.Copy(writer, file)
 		closeErr := file.Close()
 		if copyErr != nil {
 			return copyErr
@@ -65,17 +67,13 @@ func createArchive(sourceDir string, archivePath string) error {
 		return closeErr
 	})
 
-	tarErr := tarWriter.Close()
-	gzipErr := gzipWriter.Close()
+	zipErr := zipWriter.Close()
 	fileErr := archiveFile.Close()
 	if walkErr != nil {
 		return walkErr
 	}
-	if tarErr != nil {
-		return fmt.Errorf("cannot finalize tar archive: %w", tarErr)
-	}
-	if gzipErr != nil {
-		return fmt.Errorf("cannot finalize gzip archive: %w", gzipErr)
+	if zipErr != nil {
+		return fmt.Errorf("cannot finalize zip archive: %w", zipErr)
 	}
 	return fileErr
 }

@@ -36,4 +36,4 @@ COPY go.mod go.sum ./
 RUN go mod download && chmod -R a+rwX /go
 COPY . .
 
-CMD ["make", "release"]
+CMD ["make", "build"]

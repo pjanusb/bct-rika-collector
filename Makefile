@@ -2,11 +2,11 @@ APP := rika-collector
 DIST := dist
 IMAGE := rika-collector-builder
 
-.PHONY: all release clean test linux windows assets docker docker-build docker-release
+.PHONY: all release build clean test linux windows assets docker-build docker-release
 
 all: release
 
-release: clean test linux windows assets
+build: clean test linux windows assets
 
 clean:
 	mkdir -p $(DIST)
@@ -27,7 +27,7 @@ assets:
 	cp config.example $(DIST)/config.env
 	if [ -f $(DIST)/dlogparser ]; then chmod +x $(DIST)/dlogparser; fi
 
-docker: docker-build docker-release
+release: docker-build docker-release
 
 docker-build:
 	docker build --pull -t $(IMAGE) .

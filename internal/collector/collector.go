@@ -45,7 +45,7 @@ func Run(configPath string) int {
 	outputBaseName := "rika_files_" + timestamp
 	artifactsDir := filepath.Join(executableDir, "collected_files")
 	outputDir := filepath.Join(artifactsDir, outputBaseName)
-	archivePath := filepath.Join(artifactsDir, outputBaseName+".tgz")
+	archivePath := filepath.Join(artifactsDir, outputBaseName+".zip")
 	summaryPath := filepath.Join(outputDir, "collection_summary.txt")
 
 	if err := os.MkdirAll(outputDir, 0o755); err != nil {
@@ -118,8 +118,13 @@ func Run(configPath string) int {
 	}
 	log("Archive created: %s", archivePath)
 
+	if err := os.RemoveAll(outputDir); err != nil {
+		errorLog("Failed to remove collected files after archiving: %v", err)
+		return 1
+	}
+
 	if failed {
-		warn("One or more sections failed. See %s.", summaryPath)
+		warn("One or more sections failed. See collection_summary.txt in %s.", archivePath)
 		return 2
 	}
 	return 0
