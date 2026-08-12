@@ -1,6 +1,8 @@
 APP := rika-collector
 DIST := dist
 IMAGE := rika-collector-builder
+VERSION := $(shell tr -d '\r\n' < rika-collector-version.txt)
+LDFLAGS := -s -w -buildid= -X main.version=$(VERSION)
 
 .PHONY: all release build clean test linux windows assets docker-build docker-release
 
@@ -17,14 +19,15 @@ test:
 
 linux:
 	mkdir -p $(DIST)
-	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -ldflags="-s -w -buildid=" -o $(DIST)/$(APP)-amd64 ./cmd/rika-collector
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -mod=readonly -trimpath -ldflags="$(LDFLAGS)" -o $(DIST)/$(APP)-amd64 ./cmd/rika-collector
 
 windows:
 	mkdir -p $(DIST)
-	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -mod=readonly -trimpath -ldflags="-s -w -buildid=" -o $(DIST)/$(APP)-win11.exe ./cmd/rika-collector
+	CGO_ENABLED=0 GOOS=windows GOARCH=amd64 go build -mod=readonly -trimpath -ldflags="$(LDFLAGS)" -o $(DIST)/$(APP)-win11.exe ./cmd/rika-collector
 
 assets:
-	cp config.example $(DIST)/config.env
+	cp config.example $(DIST)/collector.conf
+	cp rika-collector-win11.bat $(DIST)/rika-collector-win11.bat
 	if [ -f $(DIST)/dlogparser ]; then chmod +x $(DIST)/dlogparser; fi
 
 release: docker-build docker-release

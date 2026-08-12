@@ -21,6 +21,7 @@ Program przyjmuje dokładnie jeden argument: ścieżkę do pliku konfiguracyjneg
 IP=192.168.222.2
 USER=root
 PASSWRD=!C0vF3F3
+DLOG_DAYS=3
 ```
 
 `USER` musi mieć wartość `root`. Nie są obsługiwane dodatkowe klucze konfiguracyjne.
@@ -46,11 +47,12 @@ Wyniki są dostępne bezpośrednio na hoście:
 ```text
 dist/
 ├── fedora41-amd64/
-│   ├── config.example
+│   ├── collector.conf
 │   ├── dlogparser              # tylko gdy był w katalogu projektu podczas docker build
 │   └── rika-collector
 └── windows11-amd64/
-    ├── config.example
+    ├── collector.conf
+    ├── rika-collector-win11.bat
     └── rika-collector.exe
 ```
 
@@ -72,16 +74,14 @@ Fedora 41:
 
 ```bash
 cd dist/fedora41-amd64
-cp config.example config.env
-./rika-collector config.env
+./rika-collector collector.conf
 ```
 
 Windows 11, PowerShell:
 
 ```powershell
 cd dist\windows11-amd64
-Copy-Item config.example config.env
-.\rika-collector.exe config.env
+.\rika-collector.exe collector.conf
 ```
 
 Wyniki powstają w katalogu `collected_files` obok uruchomionego programu.

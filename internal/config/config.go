@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -12,6 +13,7 @@ type Config struct {
 	IP       string
 	User     string
 	Password string
+	DlogDays int
 }
 
 func Load(path string) (Config, error) {
@@ -39,7 +41,7 @@ func Load(path string) (Config, error) {
 
 		key = strings.TrimSpace(key)
 		value = strings.TrimSpace(value)
-		if key != "IP" && key != "USER" && key != "PASSWRD" {
+		if key != "IP" && key != "USER" && key != "PASSWRD" && key != "DLOG_DAYS" {
 			return Config{}, fmt.Errorf("unknown configuration key %q on line %d", key, lineNumber)
 		}
 		if _, exists := values[key]; exists {
@@ -52,7 +54,7 @@ func Load(path string) (Config, error) {
 		return Config{}, fmt.Errorf("cannot read configuration file %q: %w", path, err)
 	}
 
-	for _, key := range []string{"IP", "USER", "PASSWRD"} {
+	for _, key := range []string{"IP", "USER", "PASSWRD", "DLOG_DAYS"} {
 		if values[key] == "" {
 			return Config{}, fmt.Errorf("configuration value %s must not be empty", key)
 		}
@@ -65,5 +67,10 @@ func Load(path string) (Config, error) {
 		return Config{}, fmt.Errorf("configuration value USER must be root")
 	}
 
-	return Config{IP: values["IP"], User: values["USER"], Password: values["PASSWRD"]}, nil
+	dlogDays, err := strconv.Atoi(values["DLOG_DAYS"])
+	if err != nil || dlogDays < 0 {
+		return Config{}, fmt.Errorf("configuration value DLOG_DAYS must be a non-negative integer")
+	}
+
+	return Config{IP: values["IP"], User: values["USER"], Password: values["PASSWRD"], DlogDays: dlogDays}, nil
 }

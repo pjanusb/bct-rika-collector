@@ -16,6 +16,7 @@ type collector struct {
 	ssh           *sshclient.Client
 	executableDir string
 	outputDir     string
+	dlogDays      int
 }
 
 type section struct {
@@ -23,7 +24,7 @@ type section struct {
 	run  func() error
 }
 
-func Run(configPath string) int {
+func Run(configPath string, version string) int {
 	cfg, err := config.Load(configPath)
 	if err != nil {
 		errorLog("%v", err)
@@ -53,6 +54,12 @@ func Run(configPath string) int {
 		return 1
 	}
 
+	if err := os.WriteFile(filepath.Join(outputDir, "rika-collector-version.txt"), []byte(version+"\n"), 0o644); err != nil {
+		errorLog("Cannot create version file: %v", err)
+		os.RemoveAll(outputDir)
+		return 1
+	}
+
 	target := cfg.User + "@" + cfg.IP
 	if err := writeSummaryHeader(summaryPath, target, outputDir); err != nil {
 		errorLog("Cannot create summary file: %v", err)
@@ -79,6 +86,7 @@ func Run(configPath string) int {
 		ssh:           sshConnection,
 		executableDir: executableDir,
 		outputDir:     outputDir,
+		dlogDays:      cfg.DlogDays,
 	}
 
 	sections := []section{
